@@ -1,11 +1,11 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { ProductVideoPlayer } from '@/components/ProductVideoPlayer';
 import ProductDetailSidebar from '@/components/ProductDetailSidebar';
 import { ProductInfo } from '@/lib/types';
 import { VideoItem, VideoDetail } from '@/lib/types';
-
+import {TooltipButton} from "@/components/TooltipButton";
 
 export default function Home() {
   const [videoUrl, setVideoUrl] = useState<string>('');
@@ -24,6 +24,7 @@ export default function Home() {
   const [isAnalyzingVideo, setIsAnalyzingVideo] = useState<boolean>(false);
   const [videoDetail, setVideoDetail] = useState<VideoDetail | null>(null);
   const [videoPlayer, setVideoPlayer] = useState<{ seekTo: (time: number) => void } | null>(null);
+  const videoPlayerRef = useRef<{ stopPlayback: () => void } | null>(null);
 
   // Load videos from TwelveLabs index
   const loadVideos = useCallback(async () => {
@@ -64,13 +65,6 @@ export default function Home() {
     }
 
     setIsLoadingVideoDetail(true);
-
-    // Clear previous video's product data when loading new video detail
-    setProducts([]);
-    setCollapsedProducts({});
-    setManualToggled({});
-    setCurrentTime(0);
-    setHighlightedProduct(null);
     setIsAnalyzingVideo(true); // Start with analyzing state
     try {
       const response = await fetch(`/api/videos/${videoId}?indexId=${defaultIndexId}`);
@@ -215,12 +209,17 @@ export default function Home() {
 
   // Handle video selection
   const handleVideoSelect = useCallback((videoId: string) => {
-
-    // Clear previous video's product data
+    // Stop current video playback
+    if (videoPlayerRef.current) {
+      videoPlayerRef.current.stopPlayback();
+    }
+    
+    // Clear previous video's product data immediately
     setProducts([]);
     setCollapsedProducts({});
     setManualToggled({});
     setCurrentTime(0);
+    setHighlightedProduct(null);
 
     // Reset analysis state
     setIsAnalyzingVideo(false);
@@ -242,15 +241,14 @@ export default function Home() {
     setCollapsedProducts({});
   }, [products.length]);
 
-
   // Handle product selection
   const handleProductSelect = useCallback((product: ProductInfo) => {
     setHighlightedProduct(product);
 
-    // Auto-clear highlight after 3 seconds
+    // Auto-clear highlight after 5 seconds
     setTimeout(() => {
       setHighlightedProduct(null);
-    }, 3000);
+    }, 5000);
   }, []);
 
   const handleToggleCollapse = (productName: string, brand: string, timeline: [number, number]) => {
@@ -334,8 +332,6 @@ export default function Home() {
     return () => clearTimeout(timer);
   }, [handleDetectProducts]);
 
-
-
   // Get display name for video
   const getVideoDisplayName = (video: VideoItem) => {
     return video.system_metadata?.filename ||
@@ -344,72 +340,72 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Header section - full width */}
-      <div>
-        <h1 className="text-2xl font-bold mb-2">Shoppable Video Experience</h1>
-        <p className="mb-6">
-          Discover and purchase products directly from a video without interrupting playback
-        </p>
-        {/* Video Selection Dropdown */}
-        <div className="mb-6">
-          <div className="relative w-full mx-auto rounded-lg">
-            {/* Dropdown button */}
-            <button
+    <div className="flex flex-col h-full">
+      {/* Video Picker */}
+      <div className="w-1/3 ml-auto mb-4">
+        <div className="relative w-full mx-auto rounded-lg">
+          {/* Dropdown button */}
+          <button
               onClick={() => setIsOpen(!isOpen)}
-              disabled={isLoadingVideos}
-              className={`cursor-pointer w-full text-left rounded-3xl py-3 px-5 font-sans text-black text-lg relative ${
-                selectedVideoId ? 'bg-zinc-100 border-2 border-black' : 'bg-zinc-100'
+              disabled={isLoadingVideos || videos.length === 0}
+              className={`${(isLoadingVideos || videos.length === 0) ? '' : 'cursor-pointer'} border border-global-text bg-transparent w-full text-left rounded-xl py-2 px-4 text-global-text text-base relative ${
+                  selectedVideoId ? 'bg-zinc-100 border-2 border-black' : 'bg-zinc-100'
               }`}
-            >
-              <div className="flex justify-between items-center">
-                <div className="truncate pr-8">
-                  {isLoadingVideos ? "Loading videos..." :
-                   videos.length === 0 ? "No videos available" :
-                   selectedVideoId ? getVideoDisplayName(videos.find(v => v._id === selectedVideoId)!) : "Select a video"}
-                </div>
-                <div className="text-lg transform transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                  &#x2303;
-                </div>
+          >
+            <div className="flex justify-between items-center">
+              <div className="truncate pr-8">
+                {isLoadingVideos ? "Loading videos..." :
+                    videos.length === 0 ? "No videos available" :
+                        selectedVideoId ? getVideoDisplayName(videos.find(v => v._id === selectedVideoId)!) : "Select a video"}
               </div>
-            </button>
+              {!isLoadingVideos && videos.length > 0 && (
+                  <div className="text-lg transform transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                    &#x2303;
+                  </div>
+              )}
+            </div>
+          </button>
 
-            {/* Dropdown content */}
-            {isOpen && (
+          {/* Dropdown content */}
+          {isOpen && (
               <div
-                className="absolute left-0 right-0 mt-1 max-h-[40vh] overflow-y-auto bg-white rounded-xl z-50 p-2"
-                style={{
-                  width: '100%',
-                  top: '100%'
-                }}
+                  className="absolute left-0 right-0 mt-1 max-h-[40vh] overflow-y-auto bg-white rounded-xl z-50 p-2"
+                  style={{
+                    width: '100%',
+                    top: '100%'
+                  }}
               >
                 {videos.map((video) => (
-                  <button
-                    key={video._id}
-                    className={`cursor-pointer rounded-2xl text-left py-2 px-4 hover:bg-gray-100 last:border-0 font-sans w-full ${video._id === selectedVideoId ? 'bg-gray-200' : ''}`}
-                    onClick={() => {
-                      handleVideoSelect(video._id);
-                      setIsOpen(false);
-                    }}
-                  >
-                    <div className="text-md truncate">
-                      {getVideoDisplayName(video)}
-                    </div>
-                  </button>
+                    <button
+                        key={video._id}
+                        className={`cursor-pointer rounded-2xl text-left py-2 px-4 hover:bg-gray-100 last:border-0 font-sans w-full ${video._id === selectedVideoId ? 'bg-gray-200' : ''}`}
+                        onClick={() => {
+                          handleVideoSelect(video._id);
+                          setIsOpen(false);
+                        }}
+                    >
+                      <div className="text-md truncate">
+                        {getVideoDisplayName(video)}
+                      </div>
+                    </button>
                 ))}
               </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
-
       {/* Video and Sidebar container */}
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-row flex-1 min-h-0 gap-6">
         {/* Video Player */}
-        <div className="lg:w-2/3">
+        <div className="w-2/3 flex flex-col items-center justify-center">
+          <h1 className="text-[40px] w-full text-global-text font-normal text-center">Shoppable Video Experience</h1>
+          <p className="mt-4 mb-8 text-xl text-gray-600 font-normal text-center">
+            Discover and purchase products directly from<br />
+            a video without interrupting playback
+          </p>
           {videoUrl ? (
-            <div className="">
+            <div className="relative w-full px-[38px] xl:px-[122px] 2xl:px-[208px]">
               <ProductVideoPlayer
+                ref={videoPlayerRef}
                 videoUrl={videoUrl}
                 products={products}
                 onProductSelect={handleProductSelect}
@@ -419,20 +415,34 @@ export default function Home() {
               />
             </div>
           ) : (
-            <div className="w-full rounded-lg flex items-center justify-center">
+            <div className="w-full rounded-lg flex items-center justify-center min-h-[400px]">
               <div className="text-center">
-                <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                <p className="text-gray-600">
-                  {isAnalyzingVideo ? 'Analyzing video content...' : 'Loading video...'}
+                <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                <p className="text-xl font-medium text-gray-700 mb-2">
+                  {isAnalyzingVideo ? 'Analyzing video content' : 'Loading video'}
+                </p>
+                <p className="text-sm text-gray-500">
+                  {isAnalyzingVideo ? 'Detecting products and their locations...' : 'Please wait while we load your video...'}
                 </p>
               </div>
             </div>
           )}
+
+          <div className="flex w-full justify-center mt-8">
+            <TooltipButton buttonText="How it works">
+              <div className="text-sm leading-5 text-white space-y-3">
+                <p className="text-justify">1. This app loads videos from a TwelveLabs Index and uses the TwelveLabs Analyze API to extract detailed product information.</p>
+                <p className="text-justify">2. The API detects every product appearing in a video, describes how each one is presented, pinpoints its on-screen location, and includes brand and pricing information when available.</p>
+                <p className="text-justify">3. Product details are then displayed in a sidebar, along with timestamps indicating when each item appears.</p>
+              </div>
+            </TooltipButton>
+          </div>
         </div>
 
         {/* Product Detail Sidebar */}
-        <div className="lg:w-1/3">
-          <div className="h-[350px]">
+        <div className="w-1/3 h-full">
+          {/* Product Detail */}
+          <div className="h-full">
             <ProductDetailSidebar
               products={products}
               collapsedProducts={collapsedProducts}
@@ -444,16 +454,6 @@ export default function Home() {
               highlightedProduct={highlightedProduct}
             />
           </div>
-        </div>
-      </div>
-
-      {/* How it works section - full width */}
-      <div className="p-6 bg-gray-200 rounded-[45.60px]">
-        <h2 className="text-lg font-semibold mb-2">💡 How it works</h2>
-                <div className="text-sm leading-relaxed">
-          <p>1. This app loads videos from a TwelveLabs Index and uses the TwelveLabs Analyze API to extract detailed product information.</p>
-          <p>2. The API detects every product appearing in a video, describes how each one is presented, pinpoints its on-screen location, and includes brand and pricing information when available.</p>
-          <p>3. Product details are then displayed in a sidebar, along with timestamps indicating when each item appears.</p>
         </div>
       </div>
     </div>

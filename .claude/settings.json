@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/local.settings.json)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*secret*)",
+      "Read(**/*password*)",
+      "Read(**/*key*)",
+      "Bash(rm -rf:*)",
+      "Bash(git:*)",
+      "Bash(node:*)",
+      "Bash(npx tsc:*)"
+    ],
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(npm test)",
+      "Bash(npm install)",
+      "Read(src/**/*)",
+      "Edit(src/**/*)",
+      "Read(app/src/**/*)",
+      "Edit(app/src/**/*)",
+      "Read(functions/function-apps/**/*.ts)",
+      "Edit(functions/function-apps/**/*.ts)",
+      "Read(package.json)",
+      "Edit(package.json)",
+      "Read(tsconfig.json)",
+      "Edit(tsconfig.json)",
+      "Read(README.md)",
+      "Edit(README.md)",
+      "Read(CLAUDE.md)",
+      "Edit(CLAUDE.md)"
+    ]
+  }
+}

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import { ShoppingBag, KeyboardArrowDown, KeyboardArrowUp } from '@mui/icons-material';
+import {ShoppingBag, KeyboardArrowDown, KeyboardArrowUp, ShoppingBagOutlined} from '@mui/icons-material';
 import { ProductDetailSidebarProps } from '@/lib/types';
 
 const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
@@ -33,13 +33,16 @@ const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
     }, 2000);
   }, []);
 
-  // Reset manual toggled state when products change
+  // Reset state when products change
   useEffect(() => {
-    if (products.length === 0) {
-      // Clear manual toggled state when products are cleared
-      // This will be handled by the parent component
+    // Reset scroll position when products change
+    if (sidebarRef.current) {
+      sidebarRef.current.scrollTop = 0;
     }
-  }, [products.length]);
+    // Reset tracking refs
+    lastActiveProductRef.current = null;
+    isUserScrollingRef.current = false;
+  }, [products]);
 
   // Add scroll listener
   useEffect(() => {
@@ -107,43 +110,35 @@ const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
 
         productElement.scrollIntoView({
           behavior: 'smooth',
-          block: 'nearest',
+          block: 'start',
           inline: 'nearest'
         });
       }
     }
   }, [highlightedProduct]);
-  if (!products.length && !isLoading) {
-    return (
-      <div className="bg-white rounded-[45.06px] p-6 mb-6 text-center h-full">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <ShoppingBag className="text-gray-400" />
-        </div>
-        <h2 className="text-xl font-semibold mb-2">Discover Products</h2>
-      </div>
-    );
-  }
 
   if (isLoading) {
     return (
-      <div className="bg-white rounded-[45.06px] p-6 mb-6 text-center h-full">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <ShoppingBag className="text-gray-400" />
-        </div>
-        <h2 className="text-xl font-semibold mb-4">Discover Products</h2>
-        <div className="flex items-center justify-center gap-2">
-          <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-gray-600">Loading products...</p>
+      <div className="bg-gray-200 border border-gray-300 rounded-[32px] p-4 h-full product-sidebar">
+        <div className="space-y-3">
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-gray-600">Detecting products...</p>
+          </div>
+          <p className="text-sm text-gray-500 text-center">
+            This may take a few moments
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      ref={sidebarRef}
-      className="bg-white rounded-[45.06px] p-4 mb-6 overflow-y-auto max-h-[calc(100vh-360px)] product-sidebar"
-    >
+    <div className="bg-gray-200 border border-gray-300 rounded-[32px] h-full product-sidebar flex flex-col overflow-hidden">
+      <div
+        ref={sidebarRef}
+        className="overflow-y-auto p-4 flex-1"
+      >
       {products.map((product, index) => {
         const uniqueKey = `${product.brand}-${product.product_name}-${product.timeline[0]}-${product.timeline[1]}`;
         const isCollapsed = collapsedProducts[uniqueKey];
@@ -158,15 +153,11 @@ const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
           highlightedProduct.timeline[0] === product.timeline[0] &&
           highlightedProduct.timeline[1] === product.timeline[1];
 
-        const textColor = isActive ? 'text-black' : 'text-gray-400';
-        const titleColor = isActive ? 'text-black' : 'text-gray-500';
-
         return (
           <div
             key={reactKey}
             className={`mb-6 transition-all duration-300 ${
-              isHighlighted
-                ? 'bg-gray-100 border-2 border-black rounded-lg p-4 shadow-md'
+              isHighlighted ? 'rounded-2xl shadow-lg'
                 : ''
             }`}
             ref={(el) => {
@@ -174,24 +165,24 @@ const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
             }}
           >
             {isCollapsed ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-4">
                 <div
-                  className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer ${
-                    isActive ? 'bg-blue-100 text-blue-800 border border-black' : 'bg-gray-100 text-gray-500'
+                  className={`px-1 py-0.5 rounded-md text-xs font-normal whitespace-nowrap cursor-pointer ${
+                    isActive ? 'text-black border border-black' : 'text-gray-600 border border-gray-600'
                   }`}
                   onClick={() => onProductClick?.(product)}
                 >
                   {Math.floor(product.timeline[0] / 60)}:{(Math.floor(product.timeline[0]) % 60).toString().padStart(2, '0')} - {Math.floor(product.timeline[1] / 60)}:{(Math.floor(product.timeline[1]) % 60).toString().padStart(2, '0')}
                 </div>
                 <span
-                  className={`text-xl font-semibold truncate flex-1 cursor-pointer ${titleColor}`}
+                  className={`text-base font-normal truncate flex-1 cursor-pointer text-gray-600`}
                   onClick={() => onProductClick?.(product)}
                   title={product.product_name}
                 >
                   {product.product_name}
                 </span>
                 <button
-                  className={`ml-2 flex-shrink-0 ${isActive ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-gray-800'}`}
+                  className={`flex-shrink-0 ${isActive ? 'text-gray-600 cursor-not-allowed' : 'text-gray-600'}`}
                   onClick={() => {
                     if (!isActive) {
                       onToggleCollapse(product.product_name, product.brand, product.timeline);
@@ -204,19 +195,17 @@ const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
                 </button>
               </div>
             ) : (
-              <div>
+              <div className="bg-white p-4 rounded-2xl">
                 <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                                    <div
-                  className={`px-2 py-1 rounded-full text-xs font-medium whitespace-nowrap cursor-pointer ${
-                    isActive ? 'bg-blue-100 text-blue-800 border border-black' : 'bg-gray-100 text-gray-500'
-                  }`}
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div
+                        className={`px-1 py-0.5 rounded-md text-xs font-normal whitespace-nowrap cursor-pointer ${
+                          isActive ? 'text-black border border-black' : 'text-gray-600 border border-gray-600'}`}
                   onClick={() => onProductClick?.(product)}
                 >
                       {Math.floor(product.timeline[0] / 60)}:{(Math.floor(product.timeline[0]) % 60).toString().padStart(2, '0')} - {Math.floor(product.timeline[1] / 60)}:{(Math.floor(product.timeline[1]) % 60).toString().padStart(2, '0')}
                     </div>
-                    <h2
-                      className={`text-xl font-semibold truncate cursor-pointer ${titleColor}`}
+                    <h2 className={`text-base font-bold truncate flex-1 cursor-pointer text-gray-600`}
                       onClick={() => onProductClick?.(product)}
                       title={product.product_name}
                     >
@@ -224,7 +213,7 @@ const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
                     </h2>
                   </div>
                   <button
-                    className={`ml-2 flex-shrink-0 ${isActive ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-gray-800'}`}
+                      className={`flex-shrink-0 ${isActive ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600'}`}
                     onClick={() => {
                       if (!isActive) {
                         onToggleCollapse(product.product_name, product.brand, product.timeline);
@@ -248,8 +237,8 @@ const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
                    product.price.toLowerCase() !== 'not explicitly visible' &&
                    product.price.trim() !== '' && (
                     <div className="mb-2">
-                      <span className={`${textColor}`}>Price: </span>
-                      <span className={`font-semibold ${textColor}`}>{product.price}</span>
+                      <span className={`text-gray-600`}>Price: </span>
+                      <span className={`font-semibold text-gray-600`}>{product.price}</span>
                     </div>
                   )}
                   {product.brand &&
@@ -264,16 +253,16 @@ const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
                    product.brand.toLowerCase() !== 'not explicitly visible' &&
                    product.brand.trim() !== '' && (
                     <div className="mb-2">
-                      <span className={`${textColor}`}>Brand: </span>
-                      <span className={`${textColor}`}>{product.brand}</span>
+                      <span className={`text-gray-600`}>Brand: </span>
+                      <span className={`text-gray-600`}>{product.brand}</span>
                     </div>
                   )}
                 </div>
-                <p className={`mb-4 ${textColor}`}>{product.description}</p>
+                <p className={`mb-4 text-gray-600`}>{product.description}</p>
                 <button
-                  className={`w-full font-medium py-2 px-4 rounded transition-colors flex items-center justify-center gap-2 ${
+                  className={`w-full py-2 px-4 text-base font-normal rounded-xl transition-colors flex items-center justify-between ${
                     shouldEnableShopButton
-                      ? 'bg-black hover:bg-opacity-90 text-white'
+                      ? 'bg-global-text hover:bg-opacity-90 text-zinc-100'
                       : 'bg-gray-200 text-gray-500 cursor-not-allowed'
                   }`}
                   onClick={() => {
@@ -311,14 +300,15 @@ const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
                   }}
                   disabled={!shouldEnableShopButton}
                 >
-                  <ShoppingBag fontSize="small" />
                   Shop at Amazon
+                  <ShoppingBagOutlined fontSize="small" />
                 </button>
               </div>
             )}
           </div>
         );
       })}
+      </div>
     </div>
   );
 });

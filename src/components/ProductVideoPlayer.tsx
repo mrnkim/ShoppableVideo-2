@@ -1,9 +1,29 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import ReactPlayer from 'react-player';
-import { ShoppingBag, Pause, PlayArrow, VolumeUp, VolumeOff } from '@mui/icons-material';
-import { ProductInfo, ProductVideoPlayerProps } from '@/lib/types';
+import {
+  ShoppingBag,
+  Pause,
+  PlayArrow,
+  VolumeUp,
+  VolumeOff,
+  PauseOutlined,
+  PlayArrowOutlined,
+  VolumeMute,
+  VolumeDown,
+  VolumeMuteOutlined,
+  VolumeOffRounded,
+  VolumeOffOutlined,
+  VolumeUpOutlined,
+  ShoppingBagOutlined
+} from '@mui/icons-material';
+import { ProductInfo, ProductVideoPlayerProps, ProductVideoPlayerHandle } from '@/lib/types';
+import {VolumeOffIcon} from "@/components/icons/VolumeOffIcon";
+import {PlayIcon} from "@/components/icons/PlayIcon";
+import {ExpandIcon} from "@/components/icons/ExpandIcon";
+import {CollapseIcon} from "@/components/icons/CollapseIcon";
+import {TooltipButton} from "@/components/TooltipButton";
 
-const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
+const ProductVideoPlayer = forwardRef<ProductVideoPlayerHandle, ProductVideoPlayerProps>(({
   videoUrl,
   products,
   onProductSelect,
@@ -12,7 +32,7 @@ const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
   autoPlay = true,
   onTimeUpdate,
   onPlayerReady,
-}) => {
+}, ref) => {
   const [playing, setPlaying] = useState<boolean>(autoPlay);
   const [muted, setMuted] = useState<boolean>(true); // Start muted for autoplay compatibility
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -20,16 +40,49 @@ const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
   const [isHovering, setIsHovering] = useState<boolean>(false);
   const [controlsVisible, setControlsVisible] = useState<boolean>(false);
   const [duration, setDuration] = useState<number>(0);
+  const [ended, setEnded] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const playerRef = useRef<ReactPlayer>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
+  const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    stopPlayback: () => {
+      setPlaying(false);
+    }
+  }), []);
 
   // Reset product states when video URL changes
   useEffect(() => {
     setCurrentTime(0);
     setVisibleProducts([]);
-    setPlaying(autoPlay);
     setMuted(true); // Always start muted for autoplay compatibility
+    setEnded(false);
+    setIsFullscreen(false);
+    setPlaying(autoPlay);
   }, [videoUrl, autoPlay]);
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (hideControlsTimeoutRef.current) {
+        clearTimeout(hideControlsTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Update current time and visible products
   const handleProgress = (state: { playedSeconds: number }) => {
@@ -41,8 +94,8 @@ const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
     // Filter products that should be visible at current time
     const productsToShow = products.filter(
       product =>
-        currentTime >= product.timeline[0] &&
-        currentTime <= product.timeline[1]
+        state.playedSeconds >= product.timeline[0] &&
+        state.playedSeconds <= product.timeline[1]
     );
 
     setVisibleProducts(productsToShow);
@@ -51,17 +104,10 @@ const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
     // Handle play/pause toggle
   const togglePlayPause = () => {
     const newPlayingState = !playing;
-
+    
     if (newPlayingState) {
-      // Trying to play
-      if (!muted) {
-        // If trying to play unmuted, mute first for autoplay compatibility
-        setMuted(true);
-        setPlaying(true);
-      } else {
-        // Already muted, just play
-        setPlaying(true);
-      }
+      // Playing - just play without changing mute state
+      setPlaying(true);
     } else {
       // Pausing - just pause
       setPlaying(false);
@@ -88,6 +134,22 @@ const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
     }
   };
 
+  const toggleExpand = () => {
+    if (!playerContainerRef.current) return;
+    
+    if (!document.fullscreenElement) {
+      // Enter fullscreen
+      playerContainerRef.current.requestFullscreen().catch(err => {
+        console.error('Error attempting to enable fullscreen:', err);
+      });
+    } else {
+      // Exit fullscreen
+      document.exitFullscreen().catch(err => {
+        console.error('Error attempting to exit fullscreen:', err);
+      });
+    }
+  }
+
   // Handle video duration loaded
   const handleDuration = (duration: number) => {
     setDuration(duration);
@@ -110,17 +172,30 @@ const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
   const handleMouseEnter = () => {
     setIsHovering(true);
     setControlsVisible(true);
+    
+    // Clear any existing timeout
+    if (hideControlsTimeoutRef.current) {
+      clearTimeout(hideControlsTimeoutRef.current);
+      hideControlsTimeoutRef.current = null;
+    }
   };
 
   const handleMouseLeave = () => {
     setIsHovering(false);
-    // Only hide controls if video is playing
+    
+    // Clear any existing timeout
+    if (hideControlsTimeoutRef.current) {
+      clearTimeout(hideControlsTimeoutRef.current);
+    }
+    
+    // Hide controls after a delay if video is playing
     if (playing) {
-      setTimeout(() => {
-        if (!isHovering) {
-          setControlsVisible(false);
-        }
+      hideControlsTimeoutRef.current = setTimeout(() => {
+        setControlsVisible(false);
       }, 2000);
+    } else {
+      // Hide immediately if video is paused
+      setControlsVisible(false);
     }
   };
 
@@ -154,11 +229,9 @@ const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
     playerRef.current.seekTo(seekTime);
   };
 
-
-
   return (
     <div
-      className="video-container relative overflow-hidden"
+      className="relative video-container bg-black rounded-lg overflow-hidden aspect-video"
       ref={playerContainerRef}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -178,6 +251,11 @@ const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
         }}
         onPlay={() => {
           setPlaying(true);
+          setEnded(false);
+        }}
+        onEnded={() => {
+          setEnded(true);
+          setPlaying(false);
         }}
         onError={(error) => {
           console.error('Video player error:', error);
@@ -203,13 +281,14 @@ const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
           return (
             <button
               key={product.product_name}
-              className="product-marker absolute rounded-full bg-black bg-opacity-70 flex items-center justify-center cursor-pointer pointer-events-auto animate-pulse-slow transition-all duration-300 ease-in-out z-10"
+              className="absolute bg-black bg-opacity-25 border border-[#FFFFFF99] flex items-center justify-center cursor-pointer pointer-events-auto z-10 animate-fadeIn backdrop-blur-[20px] shadow-[0px_5px_5px_0px_rgba(0,0,0,0.25)] transition-[border-radius] duration-300 ease-in-out hover:!rounded-[15px] overflow-hidden isolate"
               style={{
                 left: position.left,
                 top: position.top,
-                width: '48px',
-                height: '48px', 
-                transform: 'translate(-50%, -50%)'
+                width: '35px',
+                height: '35px',
+                transform: 'translate(-50%, -50%)',
+                borderRadius: '10px'
               }}
               onClick={(e) => {
                 e.stopPropagation();
@@ -218,7 +297,7 @@ const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
               }}
               aria-label={`View ${product.product_name} details`}
             >
-              <ShoppingBag className="text-white" style={{ fontSize: '24px' }} />
+              <ShoppingBagOutlined className="text-zinc-100" style={{ fontSize: '24px' }} />
             </button>
           );
         })}
@@ -226,56 +305,68 @@ const ProductVideoPlayer: React.FC<ProductVideoPlayerProps> = ({
 
       {/* Custom Video Controls */}
       <div
-        className={`absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 transition-opacity duration-300 ${controlsVisible ? 'opacity-100' : 'opacity-0'}`}
+        className={`video-controls absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black/80 to-transparent px-6 pb-2 transition-opacity duration-300 ${controlsVisible ? 'opacity-100' : 'opacity-0'}`}
       >
         {/* Progress bar */}
         <div
-          className="w-full h-1 bg-gray-600 rounded-full mb-3 cursor-pointer"
+          className="w-full h-2 bg-[#F4F3F399] rounded-lg mb-1 cursor-pointer overflow-hidden"
           onClick={handleProgressBarClick}
         >
+          {/* Progress indicator */}
           <div
-            className="h-full bg-white rounded-full relative"
-            style={{ width: `${(currentTime / duration) * 100}%` }}
+            className="h-full bg-[#F4F3F3] relative transition-all duration-100"
+            style={{ width: ended ? '100%' : `${Math.min((currentTime / duration) * 100, 100)}%` }}
           >
-            <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-3 h-3 bg-white rounded-full"></div>
           </div>
         </div>
 
         {/* Controls row */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+        <div className="flex items-center justify-between pb-4">
+          <div className="flex items-center space-x-2">
             <button
               onClick={togglePlayPause}
-              className="w-8 h-8 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-full transition-colors"
+              className="w-6 h-6 flex items-center justify-center hover:bg-white/30 transition-colors"
               aria-label={playing ? 'Pause' : 'Play'}
             >
-              {playing ? <Pause fontSize="small" className="text-white" /> : <PlayArrow fontSize="small" className="text-white" />}
+              {playing ? <PauseOutlined className="text-white" /> : <PlayArrowOutlined className="text-white" />}
             </button>
             <button
               onClick={toggleMute}
-              className="w-8 h-8 flex items-center justify-center bg-white/20 hover:bg-white/30 rounded-full transition-colors"
+              className="w-6 h-6 flex items-center justify-center hover:bg-white/30 transition-colors"
               aria-label={muted ? 'Unmute' : 'Mute'}
             >
-              {muted ? <VolumeOff fontSize="small" className="text-white" /> : <VolumeUp fontSize="small" className="text-white" />}
+              {muted ? <VolumeOffOutlined className="text-white" /> : <VolumeUpOutlined className="text-white" />}
             </button>
-            <span className="text-white text-sm">
-              {formatTime(currentTime)} / {formatTime(duration)}
+            <span className="text-white font-ibm-plex-mono font-medium" style={{ fontSize: '12px', lineHeight: '16px', letterSpacing: '0' }}>
+              {formatTime(ended ? duration : currentTime)} / {formatTime(duration)}
             </span>
           </div>
 
-          <div className="text-white text-sm">
-            {visibleProducts.length > 0 && (
-              <span className="flex items-center">
-                <ShoppingBag fontSize="small" className="mr-1" />
-                {visibleProducts.length} product{visibleProducts.length !== 1 ? 's' : ''} available
-              </span>
-            )}
+          <div>
+            <button
+                onClick={toggleExpand}
+                className="w-6 h-6 flex items-center justify-center hover:bg-white/30 transition-colors"
+                aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+            >
+              {isFullscreen ? <CollapseIcon /> : <ExpandIcon />}
+            </button>
           </div>
+
+          {/*<div className="text-white text-sm">*/}
+          {/*  {visibleProducts.length > 0 && (*/}
+          {/*    <span className="flex items-center">*/}
+          {/*      <ShoppingBag fontSize="small" className="mr-1" />*/}
+          {/*      {visibleProducts.length} product{visibleProducts.length !== 1 ? 's' : ''} available*/}
+          {/*    </span>*/}
+          {/*  )}*/}
+          {/*</div>*/}
         </div>
       </div>
     </div>
   );
-};
+});
+
+ProductVideoPlayer.displayName = 'ProductVideoPlayer';
 
 export default ProductVideoPlayer;
 export { ProductVideoPlayer };

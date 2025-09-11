@@ -78,3 +78,7 @@ export interface ProductVideoPlayerProps {
   onTimeUpdate?: (currentTime: number) => void;
   onPlayerReady?: (player: { seekTo: (time: number) => void }) => void;
 }
+
+export interface ProductVideoPlayerHandle {
+  stopPlayback: () => void;
+}
