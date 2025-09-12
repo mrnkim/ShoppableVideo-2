@@ -42,6 +42,7 @@ const ProductVideoPlayer = forwardRef<ProductVideoPlayerHandle, ProductVideoPlay
   const [duration, setDuration] = useState<number>(0);
   const [ended, setEnded] = useState<boolean>(false);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [loaded, setLoaded] = useState<number>(0);
   const playerRef = useRef<ReactPlayer>(null);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -84,9 +85,10 @@ const ProductVideoPlayer = forwardRef<ProductVideoPlayerHandle, ProductVideoPlay
     };
   }, []);
 
-  // Update current time and visible products
-  const handleProgress = (state: { playedSeconds: number }) => {
+  // Update current time, loaded buffer, and visible products
+  const handleProgress = (state: { playedSeconds: number; loaded: number }) => {
     setCurrentTime(state.playedSeconds);
+    setLoaded(state.loaded);
     if (onTimeUpdate) {
       onTimeUpdate(state.playedSeconds);
     }
@@ -309,12 +311,18 @@ const ProductVideoPlayer = forwardRef<ProductVideoPlayerHandle, ProductVideoPlay
       >
         {/* Progress bar */}
         <div
-          className="w-full h-2 bg-[#F4F3F399] rounded-lg mb-1 cursor-pointer overflow-hidden"
+          className="w-full h-2 bg-[#F4F3F399] rounded-lg mb-1 cursor-pointer overflow-hidden relative"
           onClick={handleProgressBarClick}
         >
+          {/* Buffer indicator */}
+          <div
+            className="absolute top-0 left-0 h-full bg-[#F4F3F366] transition-all duration-100"
+            style={{ width: `${Math.min(loaded * 100, 100)}%` }}
+          >
+          </div>
           {/* Progress indicator */}
           <div
-            className="h-full bg-[#F4F3F3] relative transition-all duration-100"
+            className="absolute top-0 left-0 h-full bg-[#F4F3F3] transition-all duration-100"
             style={{ width: ended ? '100%' : `${Math.min((currentTime / duration) * 100, 100)}%` }}
           >
           </div>
