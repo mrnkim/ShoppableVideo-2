@@ -22,6 +22,8 @@ import {PlayIcon} from "@/components/icons/PlayIcon";
 import {ExpandIcon} from "@/components/icons/ExpandIcon";
 import {CollapseIcon} from "@/components/icons/CollapseIcon";
 import {TooltipButton} from "@/components/TooltipButton";
+import {VolumeUpIcon} from "@/components/icons/VolumeUpIcon";
+import {PauseIcon} from "@/components/icons/PauseIcon";
 
 const ProductVideoPlayer = forwardRef<ProductVideoPlayerHandle, ProductVideoPlayerProps>(({
   videoUrl,
@@ -336,14 +338,14 @@ const ProductVideoPlayer = forwardRef<ProductVideoPlayerHandle, ProductVideoPlay
               className="w-6 h-6 flex items-center justify-center hover:bg-white/30 transition-colors"
               aria-label={playing ? 'Pause' : 'Play'}
             >
-              {playing ? <PauseOutlined className="text-white" /> : <PlayArrowOutlined className="text-white" />}
+              {playing ? <PauseIcon /> : <PlayIcon />}
             </button>
             <button
               onClick={toggleMute}
               className="w-6 h-6 flex items-center justify-center hover:bg-white/30 transition-colors"
               aria-label={muted ? 'Unmute' : 'Mute'}
             >
-              {muted ? <VolumeOffOutlined className="text-white" /> : <VolumeUpOutlined className="text-white" />}
+              {muted ? <VolumeOffIcon /> : <VolumeUpIcon />}
             </button>
             <span className="text-white font-ibm-plex-mono font-medium" style={{ fontSize: '12px', lineHeight: '16px', letterSpacing: '0' }}>
               {formatTime(ended ? duration : currentTime)} / {formatTime(duration)}

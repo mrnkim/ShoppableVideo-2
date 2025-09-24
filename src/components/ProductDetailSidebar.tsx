@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useCallback } from 'react';
-import {ShoppingBag, KeyboardArrowDown, KeyboardArrowUp, ShoppingBagOutlined} from '@mui/icons-material';
+import { ShoppingBagOutlined} from '@mui/icons-material';
 import { ProductDetailSidebarProps } from '@/lib/types';
+import {ChevronIcon} from "@/components/icons/ChevronIcon";
 
 const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
   products,
@@ -191,7 +192,7 @@ const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
                   disabled={isActive}
                   aria-label="펼치기"
                 >
-                  <KeyboardArrowDown />
+                  <ChevronIcon direction='down' />
                 </button>
               </div>
             ) : (
@@ -222,7 +223,7 @@ const ProductDetailSidebar: React.FC<ProductDetailSidebarProps> = React.memo(({
                     disabled={isActive}
                     aria-label="접기"
                   >
-                    <KeyboardArrowUp />
+                    <ChevronIcon direction='up' />
                   </button>
                 </div>
                 <div className="mb-4">

@@ -6,6 +6,8 @@ import ProductDetailSidebar from '@/components/ProductDetailSidebar';
 import { ProductInfo } from '@/lib/types';
 import { VideoItem, VideoDetail } from '@/lib/types';
 import {TooltipButton} from "@/components/TooltipButton";
+import {Logo} from "@/components/icons/Logo";
+import {ChevronIcon} from "@/components/icons/ChevronIcon";
 
 export default function Home() {
   const [videoUrl, setVideoUrl] = useState<string>('');
@@ -341,56 +343,62 @@ export default function Home() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Video Picker */}
-      <div className="w-1/3 ml-auto mb-4">
-        <div className="relative w-full mx-auto rounded-lg">
-          {/* Dropdown button */}
-          <button
-              onClick={() => setIsOpen(!isOpen)}
-              disabled={isLoadingVideos || videos.length === 0}
-              className={`${(isLoadingVideos || videos.length === 0) ? '' : 'cursor-pointer'} border border-global-text bg-transparent w-full text-left rounded-xl py-2 px-4 text-global-text text-base relative ${
-                  selectedVideoId ? 'bg-zinc-100 border-2 border-black' : 'bg-zinc-100'
-              }`}
-          >
-            <div className="flex justify-between items-center">
-              <div className="truncate pr-8">
-                {isLoadingVideos ? "Loading videos..." :
-                    videos.length === 0 ? "No videos available" :
-                        selectedVideoId ? getVideoDisplayName(videos.find(v => v._id === selectedVideoId)!) : "Select a video"}
+      <div className="flex flex-row">
+        {/* Logo */}
+        <div className="w-2/3">
+          <Logo />
+        </div>
+        {/* Video Picker */}
+        <div className="w-1/3 ml-auto mb-4">
+          <div className="relative w-full mx-auto rounded-lg">
+            {/* Dropdown button */}
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                disabled={isLoadingVideos || videos.length === 0}
+                className={`${(isLoadingVideos || videos.length === 0) ? '' : 'cursor-pointer'} border border-global-text bg-transparent w-full text-left rounded-xl py-2 px-4 text-global-text text-base relative ${
+                    selectedVideoId ? 'bg-zinc-100 border-2 border-black' : 'bg-zinc-100'
+                }`}
+            >
+              <div className="flex justify-between items-center">
+                <div className="truncate pr-8">
+                  {isLoadingVideos ? "Loading videos..." :
+                      videos.length === 0 ? "No videos available" :
+                          selectedVideoId ? getVideoDisplayName(videos.find(v => v._id === selectedVideoId)!) : "Select a video"}
+                </div>
+                {!isLoadingVideos && videos.length > 0 && (
+                    <div className="text-lg transform transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
+                      <ChevronIcon direction='down' />
+                    </div>
+                )}
               </div>
-              {!isLoadingVideos && videos.length > 0 && (
-                  <div className="text-lg transform transition-transform duration-200" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                    &#x2303;
-                  </div>
-              )}
-            </div>
-          </button>
+            </button>
 
-          {/* Dropdown content */}
-          {isOpen && (
-              <div
-                  className="absolute left-0 right-0 mt-1 max-h-[40vh] overflow-y-auto bg-white rounded-xl z-50 p-2"
-                  style={{
-                    width: '100%',
-                    top: '100%'
-                  }}
-              >
-                {videos.map((video) => (
-                    <button
-                        key={video._id}
-                        className={`cursor-pointer rounded-2xl text-left py-2 px-4 hover:bg-gray-100 last:border-0 font-sans w-full ${video._id === selectedVideoId ? 'bg-gray-200' : ''}`}
-                        onClick={() => {
-                          handleVideoSelect(video._id);
-                          setIsOpen(false);
-                        }}
-                    >
-                      <div className="text-md truncate">
-                        {getVideoDisplayName(video)}
-                      </div>
-                    </button>
-                ))}
-              </div>
-          )}
+            {/* Dropdown content */}
+            {isOpen && (
+                <div
+                    className="absolute left-0 right-0 mt-1 max-h-[40vh] overflow-y-auto bg-white rounded-xl z-50 p-2"
+                    style={{
+                      width: '100%',
+                      top: '100%'
+                    }}
+                >
+                  {videos.map((video) => (
+                      <button
+                          key={video._id}
+                          className={`cursor-pointer rounded-2xl text-left py-2 px-4 hover:bg-gray-100 last:border-0 font-sans w-full ${video._id === selectedVideoId ? 'bg-gray-200' : ''}`}
+                          onClick={() => {
+                            handleVideoSelect(video._id);
+                            setIsOpen(false);
+                          }}
+                      >
+                        <div className="text-md truncate">
+                          {getVideoDisplayName(video)}
+                        </div>
+                      </button>
+                  ))}
+                </div>
+            )}
+          </div>
         </div>
       </div>
       {/* Video and Sidebar container */}

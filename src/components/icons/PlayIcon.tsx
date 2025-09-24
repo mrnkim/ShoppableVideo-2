@@ -1,7 +1,8 @@
 export const PlayIcon = () => {
     return (
-        <svg width="14" height="18" viewBox="0 0 14 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path fillRule="evenodd" clipRule="evenodd" d="M1.8089 2.29903V15.701L12.1248 9L1.8089 2.29903ZM0.25 2.14347C0.25 1.02341 1.57952 0.36261 2.55639 0.997163L13.1118 7.85369C13.9627 8.40643 13.9627 9.59356 13.1118 10.1463L2.55639 17.0028C1.57952 17.6374 0.25 16.9766 0.25 15.8565V2.14347Z" fill="white"/>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fillRule="evenodd" clipRule="evenodd" d="M6.8089 5.29903V18.701L17.1248 12L6.8089 5.29903ZM5.25 5.14347C5.25 4.02341 6.57952 3.36261 7.55639 3.99716L18.1118 10.8537C18.9627 11.4064 18.9627 12.5936 18.1118 13.1463L7.55639 20.0028C6.57952 20.6374 5.25 19.9766 5.25 18.8565V5.14347Z" fill="white"/>
         </svg>
+
     )
 }
