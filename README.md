@@ -3,7 +3,7 @@
 A sample web application that turns any streaming video into an interactive, “shop-the-look” experience.
 Built on **TwelveLabs’ Analyze API**, the app detects products that appear in specific frames, generates contextual descriptions, and lets viewers check-out without pausing playback – mirroring TikTok Shop’s contextual commerce flow but optimized for long-form streaming content.
 
-![App screenshot](public/screenshot.png)
+![App screenshot](public/screen.gif)
 
 ## ✨ Key Capabilities
 
@@ -34,7 +34,7 @@ Built on **TwelveLabs’ Analyze API**, the app detects products that appear in 
 ### 1. Clone & install
 
 ```bash
-git clone git@github.com:mrnkim/ShoppableVideo.git
+git clone ggit@github.com:mrnkim/ShoppableVideo-2.git
 npm install
 ```
 
@@ -45,8 +45,6 @@ Customize `.env.example` as follows:
 ```bash
 TWELVELABS_API_KEY=<YOUR_API_KEY>
 NEXT_PUBLIC_DEFAULT_INDEX_ID=<YOUR_DEFAULT_INDEX_ID>
-
-# Optional: defaults to api version 1.3
 TWELVELABS_API_BASE_URL=https://api.twelvelabs.io/v1.3
 ```
 
