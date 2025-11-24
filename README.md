@@ -3,7 +3,11 @@
 A sample web application that turns any streaming video into an interactive, “shop-the-look” experience.
 Built on **TwelveLabs’ Analyze API**, the app detects products that appear in specific frames, generates contextual descriptions, and lets viewers check-out without pausing playback – mirroring TikTok Shop’s contextual commerce flow but optimized for long-form streaming content.
 
+📌 [Demo App](https://shoppable-video-2.vercel.app/) – Try the live demo
+
 ![App screenshot](public/screen.gif)
+
+✨ [Video Walkthrough](https://www.loom.com/share/2b35bf850bbe4a2fa96d3da8687920fb?sid=897383c7-6121-4c49-84f2-35686cfdb9fc) – Watch the demo walkthrough
 
 ## ✨ Key Capabilities
 
