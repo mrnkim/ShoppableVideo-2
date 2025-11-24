@@ -215,7 +215,7 @@ export default function Home() {
     if (videoPlayerRef.current) {
       videoPlayerRef.current.stopPlayback();
     }
-    
+
     // Clear previous video's product data immediately
     setProducts([]);
     setCollapsedProducts({});
@@ -347,6 +347,19 @@ export default function Home() {
         {/* Logo */}
         <div className="w-2/3">
           <Logo />
+          <div className="mt-2 pb-1">
+            <div className="flex flex-wrap gap-2 mb-2 items-center">
+              <span
+                className="inline-block flex-shrink-0 rounded-md px-1 py-0.5 text-xs font-medium"
+                style={{
+                  border: "1px solid #8F8984",
+                  color: "#8F8984",
+                }}
+              >
+                SAMPLE APP
+              </span>
+            </div>
+          </div>
         </div>
         {/* Video Picker */}
         <div className="w-1/3 ml-auto mb-4">
